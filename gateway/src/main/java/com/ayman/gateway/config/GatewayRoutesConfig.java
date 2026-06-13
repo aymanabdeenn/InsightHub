@@ -1,28 +1,19 @@
 package com.ayman.gateway.config;
 
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
-import org.springframework.web.servlet.function.RouterFunction;
-import org.springframework.web.servlet.function.ServerResponse;
-
-import static org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions.uri;
-import static org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions.route;
-import static org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions.http;
-import static org.springframework.cloud.gateway.server.mvc.predicate.GatewayRequestPredicates.path;
 
 @Configuration
 public class GatewayRoutesConfig {
 
     @Bean
-    @Order(-1)
-    public RouterFunction<ServerResponse> paymentServiceRoutes() {
-        return route("payment-service")
-                .route(
-                        path("/api/v1/payments").or(path("/api/v1/payments/**")),
-                        http()
-                )
-                .before(uri("http://localhost:8070"))
+    public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
+        return builder.routes()
+                .route("payment-service", r -> r
+                        .path("/api/v1/payments", "/api/v1/payments/**")
+                        .uri("http://localhost:8070"))
                 .build();
     }
 }

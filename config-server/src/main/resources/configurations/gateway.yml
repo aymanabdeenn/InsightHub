@@ -3,33 +3,28 @@ spring:
     name: gateway
   cloud:
     gateway:
-      mvc: # ◄--- CRITICAL: WebMVC gateway looks here for its configuration!
-        discovery:
-          locator:
-            enabled: true
+      discovery:
+        locator:
+          enabled: true
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: https://${supabase.project-id}.supabase.co/auth/v1
-
 server:
   port: 8222
-
 eureka:
   client:
     register-with-eureka: false
     service-url:
       defaultZone: http://localhost:8761/eureka/
-
 logging:
   level:
     org:
       springframework:
         security: DEBUG
         security.oauth2: DEBUG
-      cloud:
-        gateway: TRACE
-
+        cloud:
+          gateway: TRACE
 supabase:
   project-id: dyzdsyhinkwyauxhydhf
