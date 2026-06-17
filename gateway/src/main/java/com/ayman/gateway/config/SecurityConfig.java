@@ -3,26 +3,24 @@ package com.ayman.gateway.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableWebFluxSecurity                  // ← replaces @EnableWebSecurity
-@EnableReactiveMethodSecurity           // ← replaces @EnableMethodSecurity
+@EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
-                .authorizeExchange(auth -> auth     // ← replaces authorizeHttpRequests
-                        .pathMatchers("/actuator/**", "/error").permitAll()  // ← replaces requestMatchers
-                        .pathMatchers("/api/v1/payments", "/api/v1/payments/**").authenticated()
-                        .anyExchange().authenticated()      // ← replaces anyRequest
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**", "/error").permitAll()
+                        .requestMatchers("/api/v1/payments", "/api/v1/payments/**").authenticated()
+                        .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .build();               // ← build() is called directly, no return http.build()
+                .build();
     }
 }
