@@ -13,7 +13,7 @@ public class GatewayRoutesConfig {
         return builder.routes()
                 .route("payment-service", r -> r
                         .path("/api/v1/payments", "/api/v1/payments/**")
-                        .uri("http://localhost:8070"))
+                        .uri("lb://PAYMENT-SERVICE"))
                 .build();
     }
 }

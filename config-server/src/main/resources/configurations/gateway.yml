@@ -5,7 +5,7 @@ spring:
     gateway:
       discovery:
         locator:
-          enabled: true
+          enabled: false
   security:
     oauth2:
       resourceserver:
