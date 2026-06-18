@@ -3,26 +3,3 @@ spring:
     name: gateway
   config:
     import: optional:configserver:http://localhost:8888
-  cloud:
-    gateway:
-        mvc:
-          routes:
-            - id: payment-service
-              uri: lb://PAYMENT-SERVICE
-              predicates:
-              - name: Path
-                args:
-                  patterns:
-                    - /api/v1/payments
-                    - /api/v1/payments/**
-              filters:
-                - name: RateLimiter
-                  args:
-                    capacity: 10
-                    period: 2s
-                    key-resolver: "#{@currentUserSub}"
-                - name: AddRequestHeader
-                  args:
-                    name: X-User-Id
-                    value: "#{@currentUserSub}"
-

@@ -3,6 +3,21 @@ spring:
     name: gateway
   cloud:
     gateway:
+      server:
+        webmvc:
+          routes:
+            - id: payment-service
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/api/v1/payments,/api/v1/payments/**
+              filters:
+                - name: inMemoryRateLimit
+                  args:
+                    capacity: 10
+                    period: 2s
+                - name: addCurrentUserHeader
+                  args:
+                    name: X-User-Id
       discovery:
         locator:
           enabled: false
