@@ -13,8 +13,8 @@ spring:
               filters:
                 - name: inMemoryRateLimit
                   args:
-                    capacity: 10
-                    period: 2s
+                    capacity: 3
+                    period: 5s
                 - name: addCurrentUserHeader
                   args:
                     name: X-User-Id
