@@ -1,0 +1,12 @@
+responses:
+  codes:
+    USER_NOT_FOUND:
+      status: 404
+    RESOURCE_NOT_FOUND:
+      status: 404
+    VALIDATION_FAILED:
+      status: 400
+    UNAUTHORIZED:
+      status: 401
+    INTERNAL_ERROR:
+      status: 500

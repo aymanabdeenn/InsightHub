@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"com.ayman.paymentservice", "com.ayman.configlib.errorhandler"})
+@ComponentScan(basePackages = {"com.ayman.paymentservice", "com.ayman.configlib"})
 public class PaymentServiceApplication {
 
 	public static void main(String[] args) {
