@@ -64,7 +64,6 @@
 		<dependency>
 			<groupId>com.ayman</groupId>
 			<artifactId>config-lib</artifactId>
-			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 	<build>
