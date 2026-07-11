@@ -2,10 +2,6 @@ spring:
   application:
     name: data-source-service
 
-  data:
-    mongodb:
-      uri: mongodb+srv://mongo:mongo@cluster0.3upg3as.mongodb.net/?appName=Cluster0
-
 eureka:
   instance:
     hostname: localhost

@@ -1,8 +1,12 @@
 spring:
   application:
     name: data-source-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
   config:
     import: optional:configserver:http://localhost:8888
+
 
 management:
   endpoints:
