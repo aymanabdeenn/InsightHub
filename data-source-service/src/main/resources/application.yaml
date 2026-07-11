@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: data-source-service
+  config:
+    import: optional:configserver:http://localhost:8888
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: env,health
+
+jasypt:
+  encryptor:
+    password: ${INSIGHTHUB_ENCRYPTION_KEY}
+
