@@ -1,0 +1,51 @@
+package com.ayman.datasourceservice.api;
+
+import com.ayman.datasourceservice.domain.DataSource;
+import com.ayman.datasourceservice.dto.DataSourceModDTO;
+import com.ayman.datasourceservice.dto.DataSourceRegistrationDTO;
+import com.ayman.datasourceservice.service.DataSourceService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/data-sources")
+public class DataSourceController {
+    private final DataSourceService dataSourceService;
+
+    @Autowired
+    public DataSourceController(DataSourceService dataSourceService) {
+        this.dataSourceService = dataSourceService;
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<DataSource> getDataSource(@PathVariable UUID id, @RequestHeader("X-Tenant-Id") UUID tenantId) {
+        return ResponseEntity.ok(dataSourceService.retrieveDataSource(id, tenantId));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<DataSource>> getAllDataSources(@RequestHeader("X-Tenant-Id") UUID tenantId) {
+        return ResponseEntity.ok(dataSourceService.retrieveAllDataSourcesForTenant(tenantId));
+    }
+
+    @PostMapping
+    public ResponseEntity<DataSource> registerDataSource(@RequestHeader("X-Tenant-Id") UUID tenantId, @RequestBody DataSourceRegistrationDTO dto) {
+        DataSource ds = dataSourceService.registerDataSource(tenantId, dto.name(), dto.type(), dto.config());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ds);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<DataSource> updateDataSource(@PathVariable UUID id, @RequestHeader("X-Tenant-Id") UUID tenantId, @RequestBody DataSourceModDTO dto) {
+        return ResponseEntity.ok(dataSourceService.modifyDataSource(id, tenantId, dto.name(), dto.config()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDataSource(@PathVariable UUID id, @RequestHeader("X-Tenant-Id") UUID tenantId) {
+        dataSourceService.deleteDataSource(id, tenantId);
+        return ResponseEntity.noContent().build();
+    }
+}

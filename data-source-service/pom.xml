@@ -90,7 +90,11 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>com.ayman</groupId>
+            <artifactId>config-lib</artifactId>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<plugins>
