@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Document(collection = "data_sources")
+@Document(collection = "dss_data_sources")
 public class DataSource {
     @Id
     private UUID id;

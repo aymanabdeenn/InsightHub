@@ -18,3 +18,8 @@ jasypt:
   encryptor:
     password: ${INSIGHTHUB_ENCRYPTION_KEY}
 
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.http.converter: DEBUG
+    com.ayman: DEBUG
