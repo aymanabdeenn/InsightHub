@@ -4,6 +4,10 @@ responses:
       status: 404
     DATA_SOURCE_NOT_FOUND:
       status: 404
+    CONNECTION_TEST_FAILED:
+      status: 400
+    UNSUPPORTED_CONNECTOR_TYPE:
+      status: 400
     VALIDATION_FAILED:
       status: 400
     UNAUTHORIZED:

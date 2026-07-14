@@ -1,4 +1,4 @@
-package com.ayman.datasourceservice.dto;
+package com.ayman.datasourceservice.domain.dto;
 
 import com.ayman.datasourceservice.domain.ConnectionConfig;
 

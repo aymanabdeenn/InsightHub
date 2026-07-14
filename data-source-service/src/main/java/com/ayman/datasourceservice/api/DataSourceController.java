@@ -1,8 +1,9 @@
 package com.ayman.datasourceservice.api;
 
 import com.ayman.datasourceservice.domain.DataSource;
-import com.ayman.datasourceservice.dto.DataSourceModDTO;
-import com.ayman.datasourceservice.dto.DataSourceRegistrationDTO;
+import com.ayman.datasourceservice.domain.dto.DataSourceModDTO;
+import com.ayman.datasourceservice.domain.dto.DataSourceRegistrationDTO;
+import com.ayman.datasourceservice.domain.dto.TestConnectionRequestDTO;
 import com.ayman.datasourceservice.service.DataSourceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -48,4 +49,11 @@ public class DataSourceController {
         dataSourceService.deleteDataSource(id, tenantId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/test-connection")
+    public ResponseEntity<Void> testConnection(@RequestHeader("X-tenant-Id") UUID tenantId, @RequestBody TestConnectionRequestDTO dto) {
+        dataSourceService.testConnection(dto.type(), dto.config());
+        return ResponseEntity.ok().build();
+    }
+
 }
