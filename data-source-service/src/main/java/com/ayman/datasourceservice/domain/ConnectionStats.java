@@ -40,7 +40,6 @@ public class ConnectionStats {
         this.timestamp = timestamp;
     }
 
-    // getters and setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public UUID getTenantId() { return tenantId; }
