@@ -2,9 +2,10 @@ package com.ayman.datasourceservice.service;
 
 import com.ayman.configlib.error.DataSourceNotFoundException;
 import com.ayman.datasourceservice.connector.ConnectorFactory;
+import com.ayman.datasourceservice.connector.pool.ConnectionPoolManager;
 import com.ayman.datasourceservice.domain.*;
 import com.ayman.datasourceservice.repository.DataSourceRepository;
-import org.jasypt.encryption.StringEncryptor;
+import com.ayman.datasourceservice.security.CredentialEncryptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +18,15 @@ import java.util.UUID;
 public class DataSourceService {
     private final DataSourceRepository dataSourceRepository;
     private final ConnectorFactory connectorFactory;
-    private final StringEncryptor stringEncryptor;
+    private final CredentialEncryptionService credentialEncryptionService;
+    private final ConnectionPoolManager connectionPoolManager;
 
     @Autowired
-    public DataSourceService(DataSourceRepository dataSourceRepository, ConnectorFactory connectorFactory, StringEncryptor stringEncryptor) {
+    public DataSourceService(DataSourceRepository dataSourceRepository, ConnectorFactory connectorFactory, CredentialEncryptionService  credentialEncryptionService, ConnectionPoolManager connectionPoolManager) {
         this.dataSourceRepository = dataSourceRepository;
         this.connectorFactory = connectorFactory;
-        this.stringEncryptor = stringEncryptor;
+        this.credentialEncryptionService = credentialEncryptionService;
+        this.connectionPoolManager = connectionPoolManager;
     }
 
     public DataSource retrieveDataSource(UUID dataSourceId, UUID tenantId) {
@@ -37,13 +40,7 @@ public class DataSourceService {
     public DataSource registerDataSource(UUID tenantId, String name, ConnectorType type, PlainConnectionConfig plainConfig) {
         testConnection(type, plainConfig);
 
-        ConnectionConfig connectionConfig = new ConnectionConfig(
-                plainConfig.getHost(),
-                plainConfig.getPort(),
-                plainConfig.getDatabase(),
-                plainConfig.getUsername(),
-                stringEncryptor.encrypt(plainConfig.getPassword())
-        );
+        ConnectionConfig connectionConfig = credentialEncryptionService.encrypt(plainConfig);
 
         DataSource ds = new DataSource(
                 tenantId,
@@ -59,32 +56,26 @@ public class DataSourceService {
         return dataSourceRepository.save(ds);
     }
 
-    public DataSource modifyDataSource(UUID dataSourceId, UUID tenantId, String name, ConnectionConfig config) {
+    public DataSource modifyDataSource(UUID dataSourceId, UUID tenantId, String name, PlainConnectionConfig config) {
         DataSource ds = dataSourceRepository.findByIdAndTenantId(dataSourceId, tenantId).orElseThrow(() -> new DataSourceNotFoundException("DATA_SOURCE_NOT_FOUND", "Data source with Id " + dataSourceId + " for the tenant with id " + tenantId + " wasn't found."));
+        testConnection(ds.getType(), config);
 
         ds.setName(name);
-        ds.setConnectionConfig(config);
+        ds.setConnectionConfig(credentialEncryptionService.encrypt(config));
         ds.setUpdatedAt(LocalDateTime.now());
 
-        return dataSourceRepository.save(ds);
+        DataSource saved = dataSourceRepository.save(ds);
+        connectionPoolManager.closePool(tenantId.toString(), dataSourceId.toString());
+        return saved;
     }
 
     public void deleteDataSource(UUID dataSourceId, UUID tenantId) {
         DataSource ds = dataSourceRepository.findByIdAndTenantId(dataSourceId, tenantId).orElseThrow(() -> new DataSourceNotFoundException("DATA_SOURCE_NOT_FOUND", "Data source with Id " + dataSourceId + " for the tenant with id " + tenantId + " wasn't found."));
         dataSourceRepository.delete(ds);
+        connectionPoolManager.closePool(tenantId.toString(), dataSourceId.toString());
     }
 
     public void testConnection(ConnectorType type, PlainConnectionConfig config) {
         connectorFactory.get(type).testConnection(config);
-    }
-
-    public PlainConnectionConfig decryptConfig(ConnectionConfig securedConfig) {
-        return new PlainConnectionConfig(
-                securedConfig.getHost(),
-                securedConfig.getPort(),
-                securedConfig.getDatabase(),
-                securedConfig.getUsername(),
-                stringEncryptor.decrypt(securedConfig.getPasswordEncrypted())
-        );
     }
 }

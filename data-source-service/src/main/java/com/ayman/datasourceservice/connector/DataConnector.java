@@ -11,6 +11,7 @@ import java.util.Map;
 public interface DataConnector {
     ConnectorType getType();
     void testConnection(PlainConnectionConfig config);
+    String buildJdbcUrl(PlainConnectionConfig config);
     List<TableMetadata> introspectSchema(String dataSourceId);
     Page<Map<String, Object>> readTable(String dataSourceId, String tableName, int page, int size);
 }

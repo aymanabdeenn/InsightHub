@@ -59,9 +59,10 @@ public class MySqlConnector implements DataConnector {
         throw new UnsupportedOperationException("Table reads are implemented in a later step.");
     }
 
-    private String buildJdbcUrl(PlainConnectionConfig config) {
+    @Override
+    public String buildJdbcUrl(PlainConnectionConfig config) {
         return String.format(
-                "jdbc:mysql://%s:%d/%s?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+                "jdbc:mysql://%s:%d/%s?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC",
                 config.getHost(),
                 config.getPort(),
                 config.getDatabase()
