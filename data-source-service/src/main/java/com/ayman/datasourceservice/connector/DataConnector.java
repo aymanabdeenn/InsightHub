@@ -14,5 +14,5 @@ public interface DataConnector {
     void testConnection(PlainConnectionConfig config);
     String buildJdbcUrl(PlainConnectionConfig config);
     List<TableMetadata> introspectSchema(UUID tenantId, UUID dataSourceId, PlainConnectionConfig config);
-    Page<Map<String, Object>> readTable(String dataSourceId, String tableName, int page, int size);
+    Page<Map<String, Object>> readTable(String tenantId, String dataSourceId, PlainConnectionConfig config, String tableName, int page, int size);
 }

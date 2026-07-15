@@ -8,11 +8,15 @@ import com.ayman.datasourceservice.domain.dto.SelectedTablesDTO;
 import com.ayman.datasourceservice.domain.dto.TestConnectionRequestDTO;
 import com.ayman.datasourceservice.service.DataSourceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -68,5 +72,15 @@ public class DataSourceController {
     public ResponseEntity<DataSource> updateSelectedTables(@PathVariable UUID id, @RequestHeader("X-Tenant-Id") UUID tenantId, @RequestBody SelectedTablesDTO dto) {
         DataSource ds = dataSourceService.updateSelectedTables(id, tenantId, dto.selectedTables());
         return ResponseEntity.ok(ds);
+    }
+
+    @GetMapping("/{id}/tables/{tableName}/data")
+    public ResponseEntity<Page<Map<String, Object>>> readTable(
+            @PathVariable UUID id,
+            @PathVariable String tableName,
+            @RequestHeader("X-Tenant-Id") UUID tenantId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        return ResponseEntity.ok(dataSourceService.readTable(id, tenantId, tableName, page, size));
     }
 }

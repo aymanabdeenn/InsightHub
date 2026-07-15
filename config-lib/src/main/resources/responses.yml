@@ -10,6 +10,8 @@ responses:
       status: 400
     SCHEMA_INTROSPECTION_FAILED:
       status: 400
+    TABLE_NOT_SELECTED:
+      status: 400
     VALIDATION_FAILED:
       status: 400
     UNAUTHORIZED:

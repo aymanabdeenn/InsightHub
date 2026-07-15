@@ -1,17 +1,20 @@
 package com.ayman.datasourceservice.service;
 
 import com.ayman.configlib.error.DataSourceNotFoundException;
+import com.ayman.configlib.error.TableNotSelectedException;
 import com.ayman.datasourceservice.connector.ConnectorFactory;
 import com.ayman.datasourceservice.connector.pool.ConnectionPoolManager;
 import com.ayman.datasourceservice.domain.*;
 import com.ayman.datasourceservice.repository.DataSourceRepository;
 import com.ayman.datasourceservice.security.CredentialEncryptionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -93,5 +96,20 @@ public class DataSourceService {
         ds.setSelectedTables(selectedTables);
         ds.setUpdatedAt(LocalDateTime.now());
         return dataSourceRepository.save(ds);
+    }
+
+    public Page<Map<String, Object>> readTable(UUID dataSourceId, UUID tenantId, String tableName, int page, int size) {
+        DataSource ds = dataSourceRepository.findByIdAndTenantId(dataSourceId, tenantId)
+                .orElseThrow(() -> new DataSourceNotFoundException("DATA_SOURCE_NOT_FOUND", "..."));
+
+        if (!ds.getSelectedTables().contains(tableName)) {
+            throw new TableNotSelectedException("TABLE_NOT_SELECTED",
+                    "Table '" + tableName + "' is not selected for querying on this data source.");
+        }
+
+        PlainConnectionConfig plainConfig = credentialEncryptionService.decrypt(ds.getConnectionConfig());
+
+        return connectorFactory.get(ds.getType())
+                .readTable(tenantId.toString(), dataSourceId.toString(), plainConfig, tableName, page, size);
     }
 }

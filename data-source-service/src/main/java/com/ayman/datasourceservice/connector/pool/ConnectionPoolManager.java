@@ -3,8 +3,10 @@ package com.ayman.datasourceservice.connector.pool;
 import com.ayman.datasourceservice.connector.ConnectorFactory;
 import com.ayman.datasourceservice.domain.ConnectorType;
 import com.ayman.datasourceservice.domain.PlainConnectionConfig;
+import com.ayman.datasourceservice.domain.PoolStats;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.HikariPoolMXBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,5 +66,19 @@ public class ConnectionPoolManager {
 
     private String poolKey(String tenantId, String dataSourceId) {
         return tenantId + ":" + dataSourceId;
+    }
+
+    public PoolStats getPoolStats(String tenantId, String dataSourceId) {
+        HikariDataSource pool = pools.get(poolKey(tenantId, dataSourceId));
+        if (pool == null) {
+            return new PoolStats(0, 0, 0, 0);
+        }
+        HikariPoolMXBean bean = pool.getHikariPoolMXBean();
+        return new PoolStats(
+                bean.getActiveConnections(),
+                bean.getIdleConnections(),
+                bean.getTotalConnections(),
+                bean.getThreadsAwaitingConnection()
+        );
     }
 }

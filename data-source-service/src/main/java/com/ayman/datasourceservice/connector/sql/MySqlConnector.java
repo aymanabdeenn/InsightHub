@@ -1,7 +1,9 @@
-package com.ayman.datasourceservice.connector;
+package com.ayman.datasourceservice.connector.sql;
 
 import com.ayman.configlib.error.ConnectionTestFailedException;
 import com.ayman.configlib.error.SchemaIntrospectionFailedException;
+import com.ayman.datasourceservice.connector.ConnectionStatsRecorder;
+import com.ayman.datasourceservice.connector.DataConnector;
 import com.ayman.datasourceservice.connector.pool.ConnectionPoolManager;
 import com.ayman.datasourceservice.domain.*;
 import com.zaxxer.hikari.HikariDataSource;
@@ -9,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.sql.*;
@@ -22,10 +26,12 @@ public class MySqlConnector implements DataConnector {
     private static final int CONNECTION_TIMEOUT_SECONDS = 5;
 
     private final ConnectionPoolManager connectionPoolManager;
+    private final ConnectionStatsRecorder statsRecorder;
 
     @Autowired
-    public MySqlConnector(ConnectionPoolManager connectionPoolManager) {
+    public MySqlConnector(ConnectionPoolManager connectionPoolManager, ConnectionStatsRecorder statsRecorder) {
         this.connectionPoolManager = connectionPoolManager;
+        this.statsRecorder = statsRecorder;
     }
 
     @Override
@@ -94,8 +100,58 @@ public class MySqlConnector implements DataConnector {
     }
 
     @Override
-    public Page<Map<String, Object>> readTable(String dataSourceId, String tableName, int page, int size) {
-        throw new UnsupportedOperationException("Table reads are implemented in a later step.");
+    public Page<Map<String, Object>> readTable(String tenantId, String dataSourceId, PlainConnectionConfig config,
+                                               String tableName, int page, int size) {
+        HikariDataSource pool = connectionPoolManager.getPool(tenantId, dataSourceId, getType(), config);
+
+        long acquireStart = System.currentTimeMillis();
+        Connection conn;
+        try {
+            conn = pool.getConnection();
+        } catch (SQLException e) {
+            long duration = System.currentTimeMillis() - acquireStart;
+            statsRecorder.recordConnectionFailed(tenantId, dataSourceId, "CONNECTION_ACQUIRED", duration,
+                    e.getMessage(), connectionPoolManager.getPoolStats(tenantId, dataSourceId));
+            throw new ConnectionTestFailedException("CONNECTION_ACQUISITION_FAILED", "Could not acquire a database connection.");
+        }
+        long acquireDuration = System.currentTimeMillis() - acquireStart;
+        statsRecorder.recordConnectionAcquired(tenantId, dataSourceId, acquireDuration,
+                connectionPoolManager.getPoolStats(tenantId, dataSourceId));
+
+        long queryStart = System.currentTimeMillis();
+        try (conn) {
+            String sql = "SELECT * FROM " + tableName + " LIMIT ? OFFSET ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, size);
+                stmt.setInt(2, page * size);
+
+                List<Map<String, Object>> rows = new ArrayList<>();
+                try (ResultSet rs = stmt.executeQuery()) {
+                    ResultSetMetaData meta = rs.getMetaData();
+                    int columnCount = meta.getColumnCount();
+
+                    while (rs.next()) {
+                        Map<String, Object> row = new LinkedHashMap<>();
+                        for (int i = 1; i <= columnCount; i++) {
+                            row.put(meta.getColumnLabel(i), rs.getObject(i));
+                        }
+                        rows.add(row);
+                    }
+                }
+
+                long queryDuration = System.currentTimeMillis() - queryStart;
+                statsRecorder.recordQuery(tenantId, dataSourceId, tableName, queryDuration, rows.size(),
+                        connectionPoolManager.getPoolStats(tenantId, dataSourceId));
+
+                return new PageImpl<>(rows, PageRequest.of(page, size), rows.size());
+            }
+        } catch (SQLException e) {
+            long queryDuration = System.currentTimeMillis() - queryStart;
+            statsRecorder.recordConnectionFailed(tenantId, dataSourceId, "QUERY", queryDuration,
+                    e.getMessage(), connectionPoolManager.getPoolStats(tenantId, dataSourceId));
+            log.warn("Table read failed: dataSourceId={}, table={}, reason={}", dataSourceId, tableName, e.getMessage());
+            throw new SchemaIntrospectionFailedException("TABLE_READ_FAILED", "Could not read data from the requested table.");
+        }
     }
 
     @Override
