@@ -1,8 +1,10 @@
 package com.ayman.datasourceservice.api;
 
 import com.ayman.datasourceservice.domain.DataSource;
+import com.ayman.datasourceservice.domain.TableMetadata;
 import com.ayman.datasourceservice.domain.dto.DataSourceModDTO;
 import com.ayman.datasourceservice.domain.dto.DataSourceRegistrationDTO;
+import com.ayman.datasourceservice.domain.dto.SelectedTablesDTO;
 import com.ayman.datasourceservice.domain.dto.TestConnectionRequestDTO;
 import com.ayman.datasourceservice.service.DataSourceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,4 +58,15 @@ public class DataSourceController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{id}/schema")
+    public ResponseEntity<List<TableMetadata>> getSchema(@PathVariable UUID id, @RequestHeader("X-Tenant-Id") UUID tenantId) {
+        List<TableMetadata> schema = dataSourceService.getSchema(id, tenantId);
+        return ResponseEntity.ok(schema);
+    }
+
+    @PutMapping("/{id}/selected-tables")
+    public ResponseEntity<DataSource> updateSelectedTables(@PathVariable UUID id, @RequestHeader("X-Tenant-Id") UUID tenantId, @RequestBody SelectedTablesDTO dto) {
+        DataSource ds = dataSourceService.updateSelectedTables(id, tenantId, dto.selectedTables());
+        return ResponseEntity.ok(ds);
+    }
 }

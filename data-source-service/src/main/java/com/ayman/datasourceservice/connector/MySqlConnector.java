@@ -1,26 +1,32 @@
 package com.ayman.datasourceservice.connector;
 
 import com.ayman.configlib.error.ConnectionTestFailedException;
-import com.ayman.configlib.error.UnSupportedOperationException;
-import com.ayman.datasourceservice.domain.ConnectorType;
-import com.ayman.datasourceservice.domain.PlainConnectionConfig;
-import com.ayman.datasourceservice.domain.TableMetadata;
+import com.ayman.configlib.error.SchemaIntrospectionFailedException;
+import com.ayman.datasourceservice.connector.pool.ConnectionPoolManager;
+import com.ayman.datasourceservice.domain.*;
+import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
+import java.sql.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class MySqlConnector implements DataConnector {
 
     private static final Logger log = LoggerFactory.getLogger(MySqlConnector.class);
     private static final int CONNECTION_TIMEOUT_SECONDS = 5;
+
+    private final ConnectionPoolManager connectionPoolManager;
+
+    @Autowired
+    public MySqlConnector(ConnectionPoolManager connectionPoolManager) {
+        this.connectionPoolManager = connectionPoolManager;
+    }
 
     @Override
     public ConnectorType getType() {
@@ -50,8 +56,41 @@ public class MySqlConnector implements DataConnector {
     }
 
     @Override
-    public List<TableMetadata> introspectSchema(String dataSourceId) {
-        throw new UnSupportedOperationException("Schema introspection is implemented in a later step.");
+    public List<TableMetadata> introspectSchema(UUID tenantId, UUID dataSourceId, PlainConnectionConfig config) {
+        HikariDataSource pool = connectionPoolManager.getPool(tenantId.toString(), dataSourceId.toString(), getType(), config);
+
+        String sql = "SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE " +
+                "FROM information_schema.columns " +
+                "WHERE TABLE_SCHEMA = ? " +
+                "ORDER BY TABLE_NAME, ORDINAL_POSITION";
+
+        Map<String, List<ColumnMetadata>> columnsByTable = new LinkedHashMap<>();
+
+        try (Connection conn = pool.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, config.getDatabase());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String tableName = rs.getString("TABLE_NAME");
+                    ColumnMetadata column = new ColumnMetadata(
+                            rs.getString("COLUMN_NAME"),
+                            rs.getString("DATA_TYPE"),
+                            "YES".equalsIgnoreCase(rs.getString("IS_NULLABLE"))
+                    );
+                    columnsByTable.computeIfAbsent(tableName, k -> new ArrayList<>()).add(column);
+                }
+            }
+        } catch (SQLException e) {
+            log.warn("Schema introspection failed: dataSourceId={}, reason={}", dataSourceId, e.getMessage());
+            throw new SchemaIntrospectionFailedException("SCHEMA_INTROSPECTION_FAILED",
+                    "Could not introspect schema for this data source.");
+        }
+
+        return columnsByTable.entrySet().stream()
+                .map(entry -> new TableMetadata(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
     }
 
     @Override

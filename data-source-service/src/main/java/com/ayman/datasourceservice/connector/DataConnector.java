@@ -7,11 +7,12 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public interface DataConnector {
     ConnectorType getType();
     void testConnection(PlainConnectionConfig config);
     String buildJdbcUrl(PlainConnectionConfig config);
-    List<TableMetadata> introspectSchema(String dataSourceId);
+    List<TableMetadata> introspectSchema(UUID tenantId, UUID dataSourceId, PlainConnectionConfig config);
     Page<Map<String, Object>> readTable(String dataSourceId, String tableName, int page, int size);
 }

@@ -78,4 +78,20 @@ public class DataSourceService {
     public void testConnection(ConnectorType type, PlainConnectionConfig config) {
         connectorFactory.get(type).testConnection(config);
     }
+
+    public List<TableMetadata> getSchema(UUID dataSourceId, UUID tenantId) {
+        DataSource ds = dataSourceRepository.findByIdAndTenantId(dataSourceId, tenantId).orElseThrow(() -> new DataSourceNotFoundException("DATA_SOURCE_NOT_FOUND", "Data source with Id " + dataSourceId + " for the tenant with id " + tenantId + " wasn't found."));
+
+        PlainConnectionConfig config = credentialEncryptionService.decrypt(ds.getConnectionConfig());
+
+        return connectorFactory.get(ds.getType()).introspectSchema(tenantId, dataSourceId, config);
+    }
+
+    public DataSource updateSelectedTables(UUID dataSourceId, UUID tenantId, List<String> selectedTables) {
+        DataSource ds = dataSourceRepository.findByIdAndTenantId(dataSourceId, tenantId).orElseThrow(() -> new DataSourceNotFoundException("DATA_SOURCE_NOT_FOUND", "Data source with Id " + dataSourceId + " for the tenant with id " + tenantId + " wasn't found."));
+
+        ds.setSelectedTables(selectedTables);
+        ds.setUpdatedAt(LocalDateTime.now());
+        return dataSourceRepository.save(ds);
+    }
 }
