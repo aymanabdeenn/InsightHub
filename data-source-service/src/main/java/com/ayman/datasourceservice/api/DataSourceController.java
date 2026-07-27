@@ -7,6 +7,7 @@ import com.ayman.datasourceservice.domain.DataSource;
 import com.ayman.datasourceservice.domain.TableMetadata;
 import com.ayman.datasourceservice.domain.dto.*;
 import com.ayman.datasourceservice.service.DataSourceService;
+import jakarta.validation.Valid;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -80,7 +81,7 @@ public class DataSourceController {
     }
 
     @PostMapping
-    public GenericResponseDTO<DataSourceResponseDTO> registerDataSource(@RequestHeader("X-Tenant-Id") UUID tenantId, @RequestBody DataSourceRegistrationDTO dto, Locale locale) {
+    public GenericResponseDTO<DataSourceResponseDTO> registerDataSource(@RequestHeader("X-Tenant-Id") UUID tenantId, @Valid @RequestBody DataSourceRegistrationDTO dto, Locale locale) {
         DataSource ds = dataSourceService.registerDataSource(tenantId, dto.name(), dto.type(), dto.config());
         DataSourceResponseDTO dsResponse = formDataSourceAsResponse(ds, tenantId);
 
@@ -95,7 +96,7 @@ public class DataSourceController {
     }
 
     @PutMapping("/{id}")
-    public GenericResponseDTO<DataSourceResponseDTO> updateDataSource(@PathVariable UUID id, @RequestHeader("X-Tenant-Id") UUID tenantId, @RequestBody DataSourceModDTO dto, Locale locale) {
+    public GenericResponseDTO<DataSourceResponseDTO> updateDataSource(@PathVariable UUID id, @RequestHeader("X-Tenant-Id") UUID tenantId, @Valid @RequestBody DataSourceModDTO dto, Locale locale) {
         DataSource ds = dataSourceService.modifyDataSource(id, tenantId, dto.name(), dto.config());
         DataSourceResponseDTO dsResponse = formDataSourceAsResponse(ds, tenantId);
 

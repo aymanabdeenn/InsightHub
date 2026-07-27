@@ -1,10 +1,25 @@
 package com.ayman.datasourceservice.domain;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class PlainConnectionConfig {
-    private String host;
-    private int port;
-    private String database;
-    private String username;
+    @NotBlank(message = "Host is required")
+    String host;
+
+    @NotNull(message = "Port is required")
+    @Min(value = 1, message = "Port must be greater than 0")
+    @Max(value = 65535, message = "Port cannot exceed 65535")
+    Integer port;
+
+    @NotBlank(message = "Database name is required")
+    String database;
+
+    @NotBlank(message = "Username is required")
+    String username;
+
     private String password;
 
     public PlainConnectionConfig() {}

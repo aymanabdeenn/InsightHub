@@ -63,6 +63,8 @@ public class DataSourceService {
 
     public DataSource modifyDataSource(UUID dataSourceId, UUID tenantId, String name, PlainConnectionConfig config) {
         DataSource ds = dataSourceRepository.findByIdAndTenantId(dataSourceId, tenantId).orElseThrow(() -> new DataSourceNotFoundException("DATA_SOURCE_NOT_FOUND", "Data source with Id " + dataSourceId + " for the tenant with id " + tenantId + " wasn't found."));
+        if(dataSourceRepository.existsByTenantIdAndName(tenantId, name)) throw new DuplicateDataSourceException("DUPLICATE_DATA_SOURCE", "A data source with tenant Id:" + tenantId + " and name: " + name + " already exists.");
+
         testConnection(ds.getType(), config);
 
         ds.setName(name);
