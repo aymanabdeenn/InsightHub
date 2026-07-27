@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
         log.error("API exception [{}]: {}", errorCode, message, ex);
 
         GenericResponseDTO<Object> body = new GenericResponseDTO<>(
-                correlationId, errorCode, message, (long) detail.getStatus(), null
+                correlationId, errorCode, message, ex.getMessage(),(long) detail.getStatus(), null
         );
 
         return ResponseEntity.status(detail.getStatus()).body(body);
@@ -62,6 +62,7 @@ public class GlobalExceptionHandler {
                 correlationId,
                 code,
                 "Internal server error",
+                ex.getMessage(),
                 (long) fallback.getStatus(),
                 null
         );
