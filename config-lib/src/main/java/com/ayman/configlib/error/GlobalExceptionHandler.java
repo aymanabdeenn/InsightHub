@@ -6,13 +6,20 @@ import com.ayman.configlib.observability.correlation.CorrelationIdFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,7 +29,8 @@ public class GlobalExceptionHandler {
     private final ResponseCodeProperties responseCodeProperties;
     private final MessageSource messageSource;
 
-    public GlobalExceptionHandler(ResponseCodeProperties responseCodeProperties, MessageSource messageSource) {
+    @Autowired
+    public GlobalExceptionHandler(@Qualifier("responseCodeProperties") ResponseCodeProperties responseCodeProperties, MessageSource messageSource) {
         this.responseCodeProperties = responseCodeProperties;
         this.messageSource = messageSource;
     }
@@ -67,6 +75,30 @@ public class GlobalExceptionHandler {
                 null
         );
         return ResponseEntity.status(fallback.getStatus()).body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<GenericResponseDTO<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex, Locale locale) {
+        Map<String, String> errors = new HashMap<>();
+
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            errors.put(error.getField(), error.getDefaultMessage());
+        }
+
+        String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
+
+        String code = "INVALID_INPUT";
+        String message = messageSource.getMessage(code,null, locale);
+        GenericResponseDTO<Map<String, String>> response = new GenericResponseDTO<>(
+                correlationId,
+                code,
+                message,
+                "One or more fields failed validation checks.",
+                (long) HttpStatus.BAD_REQUEST.value(),
+                errors
+        );
+
+        return ResponseEntity.badRequest().body(response);
     }
 
 }

@@ -13,4 +13,5 @@ public interface DataSourceRepository extends MongoRepository<DataSource, UUID> 
     List<DataSource> findByTenantId(UUID tenantId);
     Optional<DataSource> findByIdAndTenantId(UUID id, UUID tenantId);
     boolean existsByIdAndTenantId(UUID id, UUID tenantId);
+    boolean existsByTenantIdAndName(UUID tenantId, String name);
 }

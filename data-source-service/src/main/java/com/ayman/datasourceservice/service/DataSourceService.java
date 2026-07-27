@@ -1,6 +1,7 @@
 package com.ayman.datasourceservice.service;
 
 import com.ayman.configlib.error.DataSourceNotFoundException;
+import com.ayman.configlib.error.DuplicateDataSourceException;
 import com.ayman.configlib.error.TableNotSelectedException;
 import com.ayman.datasourceservice.connector.ConnectorFactory;
 import com.ayman.datasourceservice.connector.pool.ConnectionPoolManager;
@@ -41,6 +42,7 @@ public class DataSourceService {
     }
 
     public DataSource registerDataSource(UUID tenantId, String name, ConnectorType type, PlainConnectionConfig plainConfig) {
+        if(dataSourceRepository.existsByTenantIdAndName(tenantId, name)) throw new DuplicateDataSourceException("DUPLICATE_DATA_SOURCE", "A data source with tenant Id:" + tenantId + " and name: " + name + " already exists.");
         testConnection(type, plainConfig);
 
         ConnectionConfig connectionConfig = credentialEncryptionService.encrypt(plainConfig);
