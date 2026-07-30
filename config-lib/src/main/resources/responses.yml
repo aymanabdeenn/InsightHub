@@ -5,9 +5,7 @@ responses:
     DATA_SOURCE_MODIFIED:
       status: 200
     DATA_SOURCE_DELETED:
-      status: 204
-    DATA_SOURCE_CREATED:
-      status: 201
+      status: 200
     DATA_SOURCE_SCHEMA_OBTAINED:
       status: 200
     DATA_SOURCE_SELECTED_TABLES_MODIFIED:
@@ -16,17 +14,9 @@ responses:
       status: 200
     CONNECTION_TEST_SUCCEEDED:
       status: 200
-    USER_NOT_FOUND:
-      status: 404
-    DATA_SOURCE_NOT_FOUND:
-      status: 404
-    CONNECTION_TEST_FAILED:
-      status: 400
-    DUPLICATE_DATA_SOURCE:
-      status: 400
+    DATA_SOURCE_CREATED:
+      status: 201
     UNSUPPORTED_CONNECTOR_TYPE:
-      status: 400
-    SCHEMA_INTROSPECTION_FAILED:
       status: 400
     TABLE_NOT_SELECTED:
       status: 400
@@ -36,5 +26,17 @@ responses:
       status: 400
     UNAUTHORIZED:
       status: 401
+    USER_NOT_FOUND:
+      status: 404
+    DATA_SOURCE_NOT_FOUND:
+      status: 404
+    DUPLICATE_DATA_SOURCE:
+      status: 409
+    CONNECTION_TEST_FAILED:
+      status: 422
+    SCHEMA_INTROSPECTION_FAILED:
+      status: 422
+    TABLE_READ_FAILED:
+      status: 422
     INTERNAL_ERROR:
       status: 500

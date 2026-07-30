@@ -1,6 +1,6 @@
 package com.ayman.datasourceservice.connector.sql;
 
-import com.ayman.configlib.error.ConnectionTestFailedException;
+import com.ayman.configlib.error.DataSourceConnectionException;
 import com.ayman.configlib.error.SchemaIntrospectionFailedException;
 import com.ayman.datasourceservice.connector.ConnectionStatsRecorder;
 import com.ayman.datasourceservice.connector.DataConnector;
@@ -47,17 +47,17 @@ public class MySqlConnector implements DataConnector {
 
         try {
             DriverManager.setLoginTimeout(CONNECTION_TIMEOUT_SECONDS);
-            try (Connection connection = DriverManager.getConnection(jdbcUrl, config.getUsername(), config.getPassword())) {
+            try (Connection conn = DriverManager.getConnection(jdbcUrl, config.getUsername(), config.getPassword())) {
                 // Connection succeeded — nothing more to do. try-with-resources closes it immediately.
+                if (!conn.isValid(5)) {
+                    throw new DataSourceConnectionException("CONNECTION_TEST_FAILED", "Connection timed out", "CONNECTION_TIMEOUT");
+                }
                 log.info("Connection has been established.");
             }
         } catch (SQLException e) {
             log.warn("MySQL connection test failed: host={}, database={}, reason={}",
                     config.getHost(), config.getDatabase(), e.getMessage());
-            throw new ConnectionTestFailedException(
-                    "CONNECTION_TEST_FAILED",
-                    "Could not connect to the database with the provided credentials."
-            );
+            throw DataSourceConnectionException.fromDatabaseError(e);
         }
     }
 
@@ -112,7 +112,7 @@ public class MySqlConnector implements DataConnector {
             long duration = System.currentTimeMillis() - acquireStart;
             statsRecorder.recordConnectionFailed(tenantId, dataSourceId, "CONNECTION_ACQUIRED", duration,
                     e.getMessage(), connectionPoolManager.getPoolStats(tenantId, dataSourceId));
-            throw new ConnectionTestFailedException("CONNECTION_ACQUISITION_FAILED", "Could not acquire a database connection.");
+            throw DataSourceConnectionException.fromDatabaseError(e);
         }
         long acquireDuration = System.currentTimeMillis() - acquireStart;
         statsRecorder.recordConnectionAcquired(tenantId, dataSourceId, acquireDuration,

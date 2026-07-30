@@ -20,6 +20,7 @@ public class PlainConnectionConfig {
     @NotBlank(message = "Username is required")
     String username;
 
+    @NotBlank(message = "Password is required")
     private String password;
 
     public PlainConnectionConfig() {}

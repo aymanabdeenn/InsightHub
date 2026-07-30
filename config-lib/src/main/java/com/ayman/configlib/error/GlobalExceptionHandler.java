@@ -17,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -75,6 +76,29 @@ public class GlobalExceptionHandler {
                 null
         );
         return ResponseEntity.status(fallback.getStatus()).body(body);
+    }
+
+    @ExceptionHandler(DataSourceConnectionException.class)
+    public ResponseEntity<GenericResponseDTO<Object>> handleDataSourceConnectionException(DataSourceConnectionException ex, Locale locale) {
+        String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
+
+        String errorCode = ex.getErrorCode();
+        ResponseCodeProperties.ResponseDetail detail = responseCodeProperties.getCodes().get(errorCode);
+        if (detail == null) {
+            log.warn("Unknown error code '{}' thrown, falling back to INTERNAL_ERROR", errorCode);
+            errorCode = "INTERNAL_ERROR";
+            detail = responseCodeProperties.getCodes().get(errorCode);
+        }
+
+        String message = messageSource.getMessage(errorCode, null, locale);
+
+        log.error("DataSourceConnection exception [{}]: {}", errorCode, message, ex);
+
+        GenericResponseDTO<Object> body = new GenericResponseDTO<>(
+                correlationId, errorCode, message, ex.getDeveloperMessage() + " \n\n " + ex.getFailureReason(),(long) detail.getStatus(), null
+        );
+
+        return ResponseEntity.status(detail.getStatus()).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
